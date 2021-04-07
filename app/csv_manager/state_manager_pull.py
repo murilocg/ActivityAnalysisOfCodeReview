@@ -17,7 +17,7 @@ def load_pull_state():
     total = 0
     repo_index = 0
     if any(state):
-        page_info['endCursor'] = str(state['end_cursor']) if not state['end_cursor'] == "" and not math.isnan(state['end_cursor']) else "" 
+        page_info['endCursor'] = str(state['end_cursor']) if not str(state['end_cursor']) == 'nan' else ""
         page_info['hasNextPage'] = state['has_next_page']
         total = int(state['total'])
         repo_index = int(state['repo_index'])

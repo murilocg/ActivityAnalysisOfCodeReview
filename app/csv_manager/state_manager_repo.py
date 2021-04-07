@@ -16,6 +16,6 @@ def load_repo_state():
     page_info = { "endCursor": ""}
     total = 0
     if(any(state)):
-        page_info['endCursor'] = state['end_cursor'] if not state['end_cursor'] == "" or not math.isnan(state['end_cursor']) else "" 
+        page_info['endCursor'] = str(state['end_cursor']) if not str(state['end_cursor']) == 'nan' else ""
         total = int(state['total'])
     return page_info, total
