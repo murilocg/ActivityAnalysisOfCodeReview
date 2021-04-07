@@ -22,20 +22,23 @@ def add_param_string(name, value, query):
     return query.replace(name, "null") if value == "" else query.replace(name, '"%s"' % value) 
 
 def retry(status_code, query, token, sleep):
-    next_sleep = sleep + interval_retry
+    next_sleep = sleep + interval_retry if sleep < 25 else sleep
     print("[WARN] GitHub API returned {}, Retrying after {} seconds...".format(status_code, next_sleep))
     retry_count = sleep/interval_retry
-    if retry_count == max_retries:
-        raise Exception("Exceed maximum retry")
     time.sleep(sleep)
     return execute_query(query, token, next_sleep)
 
 
 def execute_query(query, token, sleep = 0):
-    request = requests.post(endpoint, json = {'query': query}, headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'bearer ' + token
-    })
+    request = ''
+    try:
+        request = requests.post(endpoint, json = {'query': query}, headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'bearer ' + token
+        })
+    except (Exception) as e:
+        return retry(500, query, token, sleep)
+
     if  request.status_code == 200:
         return request.json()
     else:

@@ -10,6 +10,12 @@ query_template = """{
         owner {
           login
         }
+        closed: pullRequests(states: CLOSED) {
+          totalCount
+        }
+        merged: pullRequests(states: MERGED){
+          totalCount
+        }
       }
     }
     pageInfo {

@@ -2,6 +2,7 @@ from app.api.query_pull_request import get_pull_requests
 from datetime import datetime
 from app.utils.ProgressBar import ProgressBar
 import app.csv_manager.state_manager_pull as sm
+import pandas as pd
 
 def is_valid_pull_request(pull_request):
     reviews = pull_request['reviews']['totalCount']
@@ -25,32 +26,35 @@ def map_pull_request(pr, repo):
         "id": pr['id']
     }
 
-def start(repo, pr_first, token):
-    page_info, total, count = sm.load_pull_state()
-    progressbar = ProgressBar("Computing PRs")
+def import_pull(repo, repo_index, pr_first, token, page_info, total, max_prs):
+    sucess = True
+    progressbar = ProgressBar("Computing PRs", max_prs)
     progressbar.add(total)
-    success = True
-    print('Repository {}'.format(repo['nome']))
     while page_info['hasNextPage']:
         try:
             data = get_pull_requests(repo['nome'], repo['dono'], pr_first, page_info['endCursor'], token)
-            page_info = data['page_info']
             new_prs = data['pull_requests']
-            total_count = data['total_count']
-            if total_count < 100:
-                break
-            progressbar.maximum = total_count
-            progressbar.add(len(new_prs))
-            pull_requests = [map_pull_request(x, repo) for x in new_prs if is_valid_pull_request(x)]
-            count+=len(pull_requests)
-            total+=len(new_prs)
-            sm.write_pull_file(repo['nome'], pull_requests)
-            sm.write_pull_state(page_info['endCursor'], page_info['hasNextPage'], total, count)
+            size = len(new_prs)
+            progressbar.add(size)
+            total+=size
+            page_info = data['page_info']
+            sm.write_pull_file(repo['nome'], [map_pull_request(x, repo) for x in new_prs if is_valid_pull_request(x)])
+            sm.write_pull_state(page_info['endCursor'], page_info['hasNextPage'], repo_index, total)
         except (Exception) as e:
             print(e)
             success = False
             break
-    progressbar.close()
-    if success:
-        sm.delete_pull_state()
-    return count, success
+    return sucess
+
+
+def start(repo_limit, pr_first, token):
+    df = pd.read_csv('tmp/repos/repositories.csv')
+    page_info, total, repo_index = sm.load_pull_state()
+    for index in range(repo_index, repo_limit):
+        repo = df.iloc[index].to_dict()
+        print("Processing PRS for repository {}".format(repo['nome']))
+        max_prs = repo['pull_requests_closed'] + repo['pull_requests_merged']
+        sucess = import_pull(repo, repo_index, pr_first, token, page_info, total, max_prs)
+        if not sucess:
+            break
+        sm.write_pull_state("", True, repo_index + 1, 0)

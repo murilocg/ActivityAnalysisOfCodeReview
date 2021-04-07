@@ -4,18 +4,25 @@ import app.extract_data.process_pull_requests as process_pull_requests
 import app.csv_manager.state_manager_repo as sm
 from app.utils.ProgressBar import ProgressBar
 
-def map_repository(repo):
+def map_repo(repo):
     return {
         "nome": repo['name'],
         "dono": repo['owner']['login'],
         "url": repo['url'],
-        "id": repo['id']
+        "id": repo['id'],
+        "pull_requests_merged": repo['merged']['totalCount'],
+        "pull_requests_closed": repo['closed']['totalCount']
     }
 
-def start(repo_first, repo_limit, pr_first, token):
-    
-    initial_page_info, initial_index, initial_total = sm.load_repo_state()
+def is_valid_repo(repo):
+    merged_count = repo['merged']['totalCount']
+    closed_count = repo['closed']['totalCount']
+    return merged_count + closed_count >= 100
+
+def start(repo_first, repo_limit, token):
+    initial_page_info, initial_total = sm.load_repo_state()
     total = initial_total
+    page_info = initial_page_info
 
     if total == repo_limit:
         print("{} repositories already processed".format(repo_limit))
@@ -24,29 +31,18 @@ def start(repo_first, repo_limit, pr_first, token):
     progressbar = ProgressBar("Computing Repositories", repo_limit)
     progressbar.add(total)
 
-    while total < repo_limit:
-        page_info = initial_page_info
-        data = get_repositories(repo_first, page_info['endCursor'], token)
-        new_repositories = data['repositories']
-        for repo_index in range(initial_index, len(new_repositories)):
-            
-            success = True
-            repo = map_repository(new_repositories[repo_index])
-            total_pull, success = process_pull_requests.start(repo, pr_first, token)
-
-            if not success:
-                sm.write_repo_state(repo_index, page_info['endCursor'], total)
-                raise Exception("[ERROR] It's was not possible to compute the pull request for repository {}".format(repo['nome']))
-            
-            if total_pull > 0:
-                total+=1
-                progressbar.add(1)
-                sm.write_repo_file(repo)
-                sm.write_repo_state(repo_index + 1, page_info['endCursor'], total)
-            else:
-                sm.write_repo_state(repo_index + 1, page_info['endCursor'], total)
-            
+    while(repo_limit - total > 0):
+        data = get_repositories(repo_first, page_info['endCursor'], token)     
+        repositories = [ map_repo(r) for r in data['repositories'] if is_valid_repo(r)]
+        size = 0
+        if(len(repositories) + total > repo_limit):
+            exceed = len(repositories) + total - repo_limit
+            index = len(repositories) - exceed
+            repositories = repositories[:index]
+        size = len(repositories)
+        total += size
+        progressbar.add(size)
+        sm.write_repo_file(repositories)
+        sm.write_repo_state(page_info['endCursor'], total)
         page_info = data['page_info']
-
     progressbar.close()
-    print("Task executed seccessfully!")

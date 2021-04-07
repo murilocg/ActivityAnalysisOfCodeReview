@@ -1,10 +1,12 @@
 import app.extract_data.process_repositories as process_repositories
+import app.extract_data.process_pull_requests as process_pull_requests
 import os
 
 def main(repo_first, repo_limit, pr_first, token):
     if not os.path.exists('tmp'):
         os.mkdir('tmp')
-    process_repositories.start(repo_first, repo_limit, pr_first, token)
+    process_repositories.start(repo_first, repo_limit, token)
+    process_pull_requests.start(repo_limit, pr_first, token)
 
 if __name__ == "__main__":
     import argparse

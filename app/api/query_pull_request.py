@@ -46,4 +46,6 @@ def get_pull_requests(repo_name, repo_owner, first, after, token):
   params = {"$name": repo_name, "$owner": repo_owner, "$first": first, "$after": after}
   query = query_utils.create_query(params, query_template)
   data = query_utils.execute_query(query, token)
+  if not "data" in data:
+    print(data)
   return parse_data(data)
