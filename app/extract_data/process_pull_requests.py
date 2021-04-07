@@ -54,9 +54,9 @@ def start(repo_limit, pr_first, token):
         repo = df.iloc[index].to_dict()
         print("Processing PRS for repository {}".format(repo['nome']))
         max_prs = repo['pull_requests_closed'] + repo['pull_requests_merged']
-        sucess = import_pull(repo, repo_index, pr_first, token, page_info, total, max_prs)
+        sucess = import_pull(repo, index, pr_first, token, page_info, total, max_prs)
         if not sucess:
             break
         page_info['endCursor'] = ""
-        page_indo['hasNextPage'] = True
-        sm.write_pull_state(page_info['endCursor'], page_indo['hasNextPage'], repo_index + 1, 0)
+        page_info['hasNextPage'] = True
+        sm.write_pull_state(page_info['endCursor'], page_info['hasNextPage'], index + 1, 0)
