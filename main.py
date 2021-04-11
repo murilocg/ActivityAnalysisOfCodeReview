@@ -9,7 +9,7 @@ def main(repo_first, repo_limit, pr_first, token):
         os.mkdir('tmp')
     process_repositories.start(repo_first, repo_limit, token)
     process_pull_requests.start(repo_limit, pr_first, token)
-    # filter_pull_requests.start(repo_limit)
+    filter_pull_requests.start(repo_limit)
     create_report.start(repo_limit)
 
 if __name__ == "__main__":
