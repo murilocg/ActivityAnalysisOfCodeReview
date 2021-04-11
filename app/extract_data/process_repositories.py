@@ -20,16 +20,11 @@ def is_valid_repo(repo):
     return merged_count + closed_count >= 100
 
 def start(repo_first, repo_limit, token):
-    initial_page_info, initial_total = sm.load_repo_state()
-    total = initial_total
-    page_info = initial_page_info
-
+    page_info, total = sm.load_repo_state()
+    
     if total == repo_limit:
         print("{} repositories already processed".format(repo_limit))
         return
-    
-    progressbar = ProgressBar("Computing Repositories", repo_limit)
-    progressbar.add(total)
 
     while(repo_limit - total > 0):
         data = get_repositories(repo_first, page_info['endCursor'], token)     
@@ -41,8 +36,6 @@ def start(repo_first, repo_limit, token):
             repositories = repositories[:index]
         size = len(repositories)
         total += size
-        progressbar.add(size)
         sm.write_repo_file(repositories)
         sm.write_repo_state(page_info['endCursor'], total)
         page_info = data['page_info']
-    progressbar.close()

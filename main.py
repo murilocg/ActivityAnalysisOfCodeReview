@@ -1,6 +1,7 @@
 import app.extract_data.process_repositories as process_repositories
 import app.extract_data.process_pull_requests as process_pull_requests
 import app.report.create_report as create_report
+import app.filter_data.filter_pull_requests as filter_pull_requests
 import os
 
 def main(repo_first, repo_limit, pr_first, token):
@@ -8,6 +9,7 @@ def main(repo_first, repo_limit, pr_first, token):
         os.mkdir('tmp')
     process_repositories.start(repo_first, repo_limit, token)
     process_pull_requests.start(repo_limit, pr_first, token)
+    # filter_pull_requests.start(repo_limit)
     create_report.start(repo_limit)
 
 if __name__ == "__main__":
